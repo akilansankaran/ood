@@ -511,10 +511,24 @@
       font-size: 14px
     }
 
-    .join {
+    .join-launch {
+      margin: 36px auto 0;
+      text-align: center
+    }
+
+    .close.is-open .join-launch {
+      display: none
+    }
+
+    .join-sheet {
+      display: none;
       margin: 36px auto 0;
       max-width: 32rem;
       text-align: left
+    }
+
+    .close.is-open .join-sheet {
+      display: block
     }
 
     .join label {
@@ -667,7 +681,7 @@
       }
     }
 
-    .join button {
+    .join-orbit button {
       appearance: none;
       position: relative;
       background: var(--ink);
@@ -681,12 +695,12 @@
       transition: background .35s, border-color .35s
     }
 
-    .join button:hover {
+    .join-orbit button:hover {
       background: rgba(217, 116, 60, .14);
       border-color: var(--post)
     }
 
-    .join button:disabled {
+    .join-orbit button:disabled {
       opacity: .5;
       cursor: wait
     }
@@ -874,7 +888,12 @@
     <section class="close" id="join">
       <div class="wrap rv">
         <h2>venture out of <i>your</i> distribution.</h2>
-        <form class="join" id="joinForm" novalidate>
+        <div class="join-launch">
+          <span class="join-orbit">
+            <button type="button" id="joinOpen">counter your priors</button>
+          </span>
+        </div>
+        <form class="join join-sheet" id="joinForm" novalidate>
           <div class="field">
             <label for="joinName">name</label>
             <input id="joinName" name="name" type="text" autocomplete="name" maxlength="120" required>
@@ -902,7 +921,7 @@
 
   <footer>
     <div><i>out of distribution</i></div>
-    <a href="#join">counter your priors</a>
+    <a href="#join" id="joinFooter">counter your priors</a>
   </footer>
 
   <script>
@@ -1443,7 +1462,10 @@
       const msg = document.getElementById('joinMsg');
       const btn = document.getElementById('joinBtn');
       const probe = document.getElementById('joinProbe');
-      if (!form || !msg || !btn || !probe) return;
+      const openBtn = document.getElementById('joinOpen');
+      const foot = document.getElementById('joinFooter');
+      const sec = document.getElementById('join');
+      if (!form || !msg || !btn || !probe || !openBtn || !sec) return;
       const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       let token = '', started = Date.now(), picked = new Set(), pieces = [], moving = false;
 
@@ -1507,10 +1529,29 @@
         mount(Array.isArray(data.items) ? data.items : []);
       }
 
-      loadChallenge().catch(() => {
-        msg.className = 'msg err';
-        msg.textContent = 'Could not load the check.';
-      });
+      function openJoin() {
+        sec.classList.add('is-open');
+        if (!token) {
+          loadChallenge().catch(() => {
+            msg.className = 'msg err';
+            msg.textContent = 'Could not load the distributions.';
+          });
+        }
+        requestAnimationFrame(() => {
+          const name = document.getElementById('joinName');
+          if (name) name.focus();
+        });
+      }
+
+      openBtn.addEventListener('click', openJoin);
+      if (foot) {
+        foot.addEventListener('click', (e) => {
+          e.preventDefault();
+          openJoin();
+          sec.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
+        });
+      }
+      if (location.hash === '#join') openJoin();
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
