@@ -1040,18 +1040,21 @@
       }
       // a chord also cuts the flat tails, where a curve is numerically alive and
       // visually not, so height decides the winner rather than distance alone
-      function third(cA, cB, xp, yp, xq, m) {
+      function third(cA, cB, xp, yp, xq, m, prevX) {
         const roots = crossings(cA, m, xp, yp, []);
         const nA = roots.length;
         crossings(cB, m, xp, yp, roots);
         let best = null;
         for (let i = 0; i < roots.length; i++) {
           const X = roots[i], k = i < nA ? 0 : 1, c = k ? cB : cA;
+          if (X < W * 0.04 || X > W * 0.96) continue;
           const sep = Math.min(Math.abs(X - xp), Math.abs(X - xq));
-          if (sep < 60 || X < W * 0.05 || X > W * 0.95) continue;
           const h = hAtPx(c, X);
-          if (h < 0.14) continue;
-          const q = h + 0.30 * Math.min(sep, 260) / 260;
+          if (h < 0.04 || sep < 16) continue;
+          let q = h + 0.28 * Math.min(sep, 280) / 280;
+          if (sep < 70) q -= (70 - sep) / 70 * 0.55;
+          if (h < 0.16) q -= (0.16 - h) / 0.16 * 0.45;
+          if (prevX >= 0) q += 0.42 * Math.exp(-((X - prevX) * (X - prevX)) / 32400);
           if (!best || q > best.q) best = { X: X, h: h, k: k, sep: sep, q: q };
         }
         return best;
@@ -1067,7 +1070,7 @@
       const S = {
         mu: 0, sg: 1, sk: 0, tmu: 0, tsg: 1, tsk: 0,
         scale: 1, split: 0, vis: 1, fPrior: 0, fPost: 0, tfPrior: 0, tfPost: 0,
-        gen: 0, walk: 0, twalk: 0, xq: -1, hand: -1e9,
+        gen: 0, walk: 0, twalk: 0, xq: -1, x3: -1, t3a: 0, hand: -1e9,
         mx: -1e5, my: -1e5, warm: 0, touched: false
       };
 
@@ -1230,22 +1233,24 @@
         const showMarks = cPo && S.gen > 0.008;
         if (showMarks) {
           const g = S.gen;
-          // scroll walks P left→right on the prior; Q walks the other way on the posterior
-          let zp = -1.7 + 3.4 * S.walk;
+          // scroll walks P left→right on the prior; Q the other way, slightly
+          // out of phase so they do not hit both peaks at once (that made the
+          // generated point vanish, then jump curves around z ≈ 0.3)
+          let zp = -1.65 + 3.30 * S.walk;
           if (now - S.hand < 220 && S.mx > -1e4 && cPrior.sig > 1) {
             const zc = Math.max(-2.2, Math.min(2.2, (S.mx - cPrior.cx) / cPrior.sig));
             zp = lerp(zp, zc, 0.45);
           }
           const xp = cPrior.cx + zp * cPrior.sig, yp = yOf(cPrior, xp);
-          const zq = 1.6 - 3.2 * S.walk;
+          const zq = 1.90 - 3.30 * S.walk;
           const xqWant = cPo.cx + zq * cPo.sig;
-          S.xq = S.xq < 0 ? xqWant : lerp(S.xq, xqWant, REDUCED ? 1 : 0.22);
+          S.xq = S.xq < 0 ? xqWant : lerp(S.xq, xqWant, REDUCED ? 1 : 0.16);
 
           if (S.xq >= 0) {
             const xq = S.xq, yq = yOf(cPo, xq);
             const m = (yq - yp) / (xq - xp || 1e-6);
             const line = X => m * (X - xp) + yp;
-            const t3 = third(cPrior, cPo, xp, yp, xq, m);
+            const t3 = third(cPrior, cPo, xp, yp, xq, m, S.x3);
 
             // held to the band the curves occupy, so a steep chord never runs up
             // into the sentence above it
@@ -1253,18 +1258,24 @@
             ctx.beginPath(); ctx.rect(0, BY - PH - 12, W, PH + 14); ctx.clip();
 
             if (t3) {
-              const x3 = t3.X, y3 = line(x3);
+              S.x3 = S.x3 < 0 ? t3.X : lerp(S.x3, t3.X, REDUCED ? 1 : 0.12);
+              S.t3a = lerp(S.t3a, 1, REDUCED ? 1 : 0.16);
+            } else {
+              S.t3a = lerp(S.t3a, 0, REDUCED ? 1 : 0.10);
+            }
+            if (S.x3 >= 0 && S.t3a > 0.02) {
+              const x3 = S.x3, y3 = line(x3), ga = g * S.t3a;
               const l = Math.min(x3, xp, xq) - 54, r = Math.max(x3, xp, xq) + 54;
               ctx.save(); ctx.setLineDash([2, 6]);
               ctx.beginPath(); ctx.moveTo(l, line(l)); ctx.lineTo(r, line(r));
-              ctx.strokeStyle = rgba(BONE, .30 * g); ctx.lineWidth = 1; ctx.stroke();
+              ctx.strokeStyle = rgba(BONE, .30 * ga); ctx.lineWidth = 1; ctx.stroke();
               ctx.beginPath(); ctx.moveTo(x3, y3); ctx.lineTo(x3, BY);
-              ctx.strokeStyle = rgba(BONE, .15 * g); ctx.stroke();
+              ctx.strokeStyle = rgba(BONE, .15 * ga); ctx.stroke();
               ctx.restore();
-              mark(x3, y3, 3, BONE, .95 * g); ring(x3, y3, 8, BONE, .34 * g);
-              const cn = t3.k ? cPo : cPrior;
+              mark(x3, y3, 3, BONE, .95 * ga); ring(x3, y3, 8, BONE, .34 * ga);
+              const cn = (t3 && t3.k) ? cPo : cPrior;
               genAt = {
-                k: t3.k, z: (x3 - cn.cx) / cn.sig,
+                k: t3 ? t3.k : 0, z: (x3 - cn.cx) / cn.sig,
                 zp: (xp - cPrior.cx) / cPrior.sig, zq: (xq - cPo.cx) / cPo.sig
               };
             }
@@ -1272,8 +1283,8 @@
             mark(xq, yq, 2.7, post, .95 * g); ring(xq, yq, 7, post, .32 * g);
             ctx.restore();
             const nz = v => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2);
-            zLabel(xp, yp, xp < cPrior.cx ? -1 : 1, 'prior  z = ' + nz(zp), pri, g);
-            zLabel(xq, yq, xq < cPo.cx ? -1 : 1, 'posterior  z = ' + nz((xq - cPo.cx) / cPo.sig), post, g);
+            zLabel(xp, yp, -1, 'prior  z = ' + nz(zp), pri, g);
+            zLabel(xq, yq, 1, 'posterior  z = ' + nz((xq - cPo.cx) / cPo.sig), post, g);
           }
         }
 
@@ -1352,7 +1363,7 @@
         const k = REDUCED ? 1 : 0.075;
         S.mu = lerp(S.mu, S.tmu, k); S.sg = lerp(S.sg, S.tsg, k); S.sk = lerp(S.sk, S.tsk, k);
         S.fPrior = lerp(S.fPrior, S.tfPrior, 0.09); S.fPost = lerp(S.fPost, S.tfPost, 0.09);
-        S.walk = lerp(S.walk, S.twalk, REDUCED ? 1 : 0.18);
+        S.walk = lerp(S.walk, S.twalk, REDUCED ? 1 : 0.12);
         if (!REDUCED && !S.touched) {                 // barely-there drift before a hand arrives
           S.tsg = 1 + Math.sin(t / 9000) * 0.035;
           S.tmu = Math.sin(t / 13000) * 0.10;
@@ -1360,7 +1371,7 @@
         now = t;
         readScroll();
         const key = [S.mu, S.sg, S.sk, S.split, S.vis, S.fPrior, S.fPost, S.scale, S.warm, S.mx, S.my,
-        S.gen, S.walk, S.xq, Math.round(now / 66)].map(v => Math.round(v * 400)).join(',');
+        S.gen, S.walk, S.xq, S.x3, S.t3a, Math.round(now / 66)].map(v => Math.round(v * 400)).join(',');
         if (key !== last) {
           last = key;
           try { render(); readout(); } catch (err) { last = ''; }
