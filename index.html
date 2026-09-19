@@ -1044,7 +1044,7 @@
         const roots = crossings(cA, m, xp, yp, []);
         const nA = roots.length;
         crossings(cB, m, xp, yp, roots);
-        let best = null;
+        const cand = [];
         for (let i = 0; i < roots.length; i++) {
           const X = roots[i], k = i < nA ? 0 : 1, c = k ? cB : cA;
           if (X < W * 0.04 || X > W * 0.96) continue;
@@ -1054,9 +1054,18 @@
           let q = h + 0.28 * Math.min(sep, 280) / 280;
           if (sep < 70) q -= (70 - sep) / 70 * 0.55;
           if (h < 0.16) q -= (0.16 - h) / 0.16 * 0.45;
-          if (prevX >= 0) q += 0.42 * Math.exp(-((X - prevX) * (X - prevX)) / 32400);
-          if (!best || q > best.q) best = { X: X, h: h, k: k, sep: sep, q: q };
+          cand.push({ X: X, h: h, k: k, sep: sep, q: q });
         }
+        if (!cand.length) return null;
+        // stay with the nearby root while it lives, so the generated point
+        // does not hop curves when two scores cross around z ≈ 0.3
+        let pool = cand;
+        if (prevX >= 0) {
+          const near = cand.filter(c => Math.abs(c.X - prevX) < 220);
+          if (near.length) pool = near;
+        }
+        let best = pool[0];
+        for (let i = 1; i < pool.length; i++) if (pool[i].q > best.q) best = pool[i];
         return best;
       }
 
