@@ -516,19 +516,19 @@
       text-align: center
     }
 
-    .close.is-open .join-launch {
+    #join.is-open .join-launch {
       display: none
     }
 
-    .join-sheet {
-      display: none;
+    #joinForm {
       margin: 36px auto 0;
       max-width: 32rem;
       text-align: left
     }
 
-    .close.is-open .join-sheet {
-      display: block
+    #join:not(.is-open) #joinForm,
+    #joinForm[hidden] {
+      display: none !important
     }
 
     .join label {
@@ -893,7 +893,7 @@
             <button type="button" id="joinOpen">counter your priors</button>
           </span>
         </div>
-        <form class="join join-sheet" id="joinForm" novalidate>
+        <form class="join" id="joinForm" hidden novalidate>
           <div class="field">
             <label for="joinName">name</label>
             <input id="joinName" name="name" type="text" autocomplete="name" maxlength="120" required>
@@ -909,7 +909,7 @@
           <div class="probe" id="joinProbe" aria-label="select the orange distributions"></div>
           <div class="row">
             <span class="join-orbit">
-              <button type="submit" id="joinBtn">counter your priors</button>
+              <button type="submit" id="joinBtn">join us</button>
             </span>
           </div>
           <p class="msg" id="joinMsg" role="status"></p>
@@ -1531,6 +1531,7 @@
 
       function openJoin() {
         sec.classList.add('is-open');
+        form.hidden = false;
         if (!token) {
           loadChallenge().catch(() => {
             msg.className = 'msg err';
@@ -1551,7 +1552,6 @@
           sec.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' });
         });
       }
-      if (location.hash === '#join') openJoin();
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
