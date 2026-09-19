@@ -509,6 +509,102 @@
       font-size: 14px
     }
 
+    .join {
+      margin: 36px auto 0;
+      max-width: 28rem;
+      text-align: left
+    }
+
+    .join label {
+      display: block;
+      margin: 0 0 6px;
+      font-size: 11.5px;
+      letter-spacing: .04em;
+      color: var(--faint)
+    }
+
+    .join .field {
+      margin: 0 0 14px
+    }
+
+    .join input[type="text"],
+    .join input[type="email"] {
+      width: 100%;
+      appearance: none;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--hair);
+      border-radius: 0;
+      padding: 8px 0 9px;
+      color: var(--bone);
+      font-family: "EB Garamond", Garamond, "Times New Roman", serif;
+      font-size: 18px;
+      line-height: 1.3;
+      outline: none;
+      transition: border-color .35s
+    }
+
+    .join input:focus {
+      border-color: var(--prior)
+    }
+
+    .join .hp {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden
+    }
+
+    .join .row {
+      display: flex;
+      align-items: end;
+      gap: 16px
+    }
+
+    .join .check {
+      flex: 1
+    }
+
+    .join button {
+      appearance: none;
+      background: transparent;
+      border: 1px solid rgba(122, 118, 240, .45);
+      color: var(--bone);
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .06em;
+      padding: 10px 16px 11px;
+      cursor: pointer;
+      transition: background .35s, border-color .35s
+    }
+
+    .join button:hover {
+      background: rgba(122, 118, 240, .14);
+      border-color: var(--prior)
+    }
+
+    .join button:disabled {
+      opacity: .5;
+      cursor: wait
+    }
+
+    .join .msg {
+      min-height: 1.4em;
+      margin: 14px 0 0;
+      font-family: "EB Garamond", Garamond, serif;
+      font-size: 16px;
+      color: var(--mute)
+    }
+
+    .join .msg.ok {
+      color: rgba(214, 212, 255, .9)
+    }
+
+    .join .msg.err {
+      color: rgba(246, 205, 177, .9)
+    }
+
     footer {
       display: flex;
       justify-content: space-between;
@@ -527,7 +623,7 @@
       color: var(--mute)
     }
 
-    footer .mail {
+    footer a {
       font-family: var(--mono);
       font-size: 12px;
       letter-spacing: .02em;
@@ -537,7 +633,7 @@
       transition: color .35s, border-color .35s
     }
 
-    footer .mail:hover {
+    footer a:hover {
       color: var(--bone);
       border-color: var(--prior)
     }
@@ -662,13 +758,30 @@
       </div>
     </section>
 
-    <!-- TODO(2): this block stands in for signup. add speaker, date, venue, and capture. -->
-    <!-- TODO: replace the mailing address below with the real list address. -->
-    <section class="close">
+    <section class="close" id="join">
       <div class="wrap rv">
-        <a class="cta" href="mailto:join@outofdistribution.dev?subject=venture%20out%20of%20your%20distribution">
-          <h2>venture out of <i>your</i> distribution.</h2>
-        </a>
+        <h2>venture out of <i>your</i> distribution.</h2>
+        <form class="join" id="joinForm" novalidate>
+          <div class="field">
+            <label for="joinName">name</label>
+            <input id="joinName" name="name" type="text" autocomplete="name" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="joinEmail">email</label>
+            <input id="joinEmail" name="email" type="email" autocomplete="email" maxlength="180" required>
+          </div>
+          <label class="hp" aria-hidden="true">company
+            <input type="text" name="website" tabindex="-1" autocomplete="off">
+          </label>
+          <div class="row">
+            <div class="field check">
+              <label for="joinCheck">a small check: <span id="joinSum">3 + 4</span></label>
+              <input id="joinCheck" name="challenge" type="text" inputmode="numeric" autocomplete="off" required>
+            </div>
+            <button type="submit" id="joinBtn">join</button>
+          </div>
+          <p class="msg" id="joinMsg" role="status"></p>
+        </form>
       </div>
     </section>
 
@@ -676,7 +789,7 @@
 
   <footer>
     <div><i>out of distribution</i></div>
-    <a class="mail" href="mailto:join@outofdistribution.dev?subject=venture%20out%20of%20your%20distribution">join@outofdistribution.dev</a>
+    <a href="#join">join the list</a>
   </footer>
 
   <script>
@@ -1209,6 +1322,62 @@
       requestAnimationFrame(tick);
       intro();
 
+    })();
+  </script>
+  <script>
+    (() => {
+      const form = document.getElementById('joinForm');
+      const msg = document.getElementById('joinMsg');
+      const btn = document.getElementById('joinBtn');
+      const sum = document.getElementById('joinSum');
+      if (!form || !msg || !btn || !sum) return;
+      let a = 0, b = 0, started = Date.now();
+      function roll() {
+        a = 2 + Math.floor(Math.random() * 8);
+        b = 2 + Math.floor(Math.random() * 8);
+        sum.textContent = a + ' + ' + b;
+        form.elements.challenge.value = '';
+      }
+      roll();
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msg.className = 'msg';
+        msg.textContent = '';
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: form.elements.name.value,
+              email: form.elements.email.value,
+              website: form.elements.website.value,
+              challenge: form.elements.challenge.value,
+              a, b, started
+            })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            roll();
+            started = Date.now();
+            msg.className = 'msg err';
+            msg.textContent = data.error || 'That did not go through.';
+            return;
+          }
+          form.reset();
+          roll();
+          started = Date.now();
+          msg.className = 'msg ok';
+          msg.textContent = data.already
+            ? 'You are already on the list.'
+            : 'You are on the list.';
+        } catch (err) {
+          msg.className = 'msg err';
+          msg.textContent = 'Could not reach the list just now.';
+        } finally {
+          btn.disabled = false;
+        }
+      });
     })();
   </script>
 </body>

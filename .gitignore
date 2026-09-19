@@ -7,3 +7,5 @@ index.1531.good.html
 .vercel
 .vercel-home/
 .DS_Store
+.env
+.env.local
