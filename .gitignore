@@ -5,4 +5,5 @@ check.js
 serve.py
 index.1531.good.html
 .vercel
+.vercel-home/
 .DS_Store
