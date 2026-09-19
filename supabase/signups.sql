@@ -7,10 +7,12 @@ create table if not exists public.signups (
 );
 
 alter table public.signups enable row level security;
+grant usage on schema public to anon, authenticated;
+grant insert on public.signups to anon, authenticated;
 
 drop policy if exists "public can insert signups" on public.signups;
 create policy "public can insert signups"
   on public.signups
   for insert
-  to anon, authenticated
+  to anon, authenticated, public
   with check (true);

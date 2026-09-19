@@ -54,14 +54,17 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const headers = {
+    apikey: key,
+    'Content-Type': 'application/json',
+    Prefer: 'return=minimal',
+  };
+  // JWT anon/service keys go in Authorization; the newer sb_publishable_ keys are not JWTs
+  if (key.includes('.')) headers.Authorization = 'Bearer ' + key;
+
   const insert = await fetch(`${url.replace(/\/$/, '')}/rest/v1/signups`, {
     method: 'POST',
-    headers: {
-      apikey: key,
-      Authorization: 'Bearer ' + key,
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
-    },
+    headers,
     body: JSON.stringify({ name, email }),
   });
 
