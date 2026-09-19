@@ -1,0 +1,8 @@
+node_modules/
+package-lock.json
+package.json
+check.js
+serve.py
+index.1531.good.html
+.vercel
+.DS_Store

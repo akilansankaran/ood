@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Out of Distribution</title>
+  <meta name="description" content="Transformative ideas on the frontier of intelligence.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --ink: #100E0C;
+      --bone: #F2EBE1;
+      --prior: #7A76F0;
+      --post: #D9743C;
+      --mute: rgba(242, 235, 225, .55);
+      --faint: rgba(242, 235, 225, .28);
+      --hair: rgba(242, 235, 225, .14);
+      --serif: "Instrument Serif", Georgia, serif;
+      --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%
+    }
+
+    body {
+      margin: 0;
+      background: var(--ink);
+      color: var(--bone);
+      font-family: var(--mono);
+      font-weight: 300;
+      font-size: 15px;
+      line-height: 1.85;
+      letter-spacing: .005em;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: rgba(122, 118, 240, .32)
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none
+    }
+
+    #field {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none
+    }
+
+    .vig {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(115% 85% at 50% 32%, rgba(255, 238, 214, .055), rgba(255, 238, 214, 0) 62%),
+        radial-gradient(140% 120% at 50% 50%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, .55) 100%);
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      opacity: .05;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    main,
+    nav,
+    footer {
+      position: relative;
+      z-index: 3
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 6;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 26px clamp(20px, 4vw, 44px);
+      font-size: 12.5px;
+      color: var(--mute)
+    }
+
+    nav .mark {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--bone)
+    }
+
+    nav .mark svg {
+      display: block;
+      overflow: visible
+    }
+
+    nav .mark svg path {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.1;
+      stroke-linecap: round;
+      opacity: .45
+    }
+
+    nav .mark svg circle {
+      fill: currentColor;
+      transition: transform .55s cubic-bezier(.2, .7, .2, 1)
+    }
+
+    nav .mark:hover svg circle {
+      transform: translate(-2px, -2.5px)
+    }
+
+    nav .mark .wm {
+      font-family: var(--serif);
+      font-size: 17px;
+      line-height: 1;
+      letter-spacing: .002em
+    }
+
+    nav .mark .wm i {
+      font-style: italic;
+      margin-right: .12em
+    }
+
+    nav .links {
+      display: flex;
+      gap: 22px
+    }
+
+    nav .links a {
+      transition: color .35s
+    }
+
+    nav .links a:hover {
+      color: var(--bone)
+    }
+
+    @media(max-width:620px) {
+      nav .links {
+        display: none
+      }
+    }
+
+    section {
+      padding: clamp(110px, 17vh, 210px) clamp(20px, 4vw, 44px)
+    }
+
+    .wrap {
+      max-width: 1040px;
+      margin: 0 auto
+    }
+
+    .narrow {
+      max-width: 640px
+    }
+
+    /* hero ---------------------------------------------------------------- */
+    .hero {
+      height: 100svh;
+      min-height: 600px;
+      padding: 0;
+      position: relative;
+      overflow: hidden
+    }
+
+    .fig {
+      position: absolute;
+      inset: 0;
+      will-change: transform, opacity
+    }
+
+    .word {
+      position: absolute;
+      top: 0;
+      left: 0;
+      white-space: nowrap;
+      will-change: transform
+    }
+
+    #dist {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(2.3rem, 7.4vw, 6.1rem);
+      line-height: 1;
+      letter-spacing: -.01em;
+      transform-origin: 50% 50%
+    }
+
+    #outof {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(1.4rem, 3.2vw, 2.6rem);
+      line-height: 1;
+      color: var(--bone);
+      letter-spacing: -.005em
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 1px;
+      height: .78em;
+      background: var(--bone);
+      vertical-align: baseline;
+      margin-left: .07em;
+      transform: translateY(.04em)
+    }
+
+    .cursor.blink {
+      animation: bl 1.05s steps(1, end) infinite
+    }
+
+    .cursor.hold {
+      opacity: 0
+    }
+
+    .cursor.gone {
+      opacity: 0;
+      transition: opacity .5s
+    }
+
+    @keyframes bl {
+
+      0%,
+      49% {
+        opacity: 1
+      }
+
+      50%,
+      100% {
+        opacity: 0
+      }
+    }
+
+    .cue {
+      position: absolute;
+      left: 50%;
+      bottom: 34px;
+      transform: translateX(-50%);
+      text-align: center;
+      opacity: 0;
+      transition: opacity 1.6s ease .6s
+    }
+
+    .cue span {
+      font-size: 11.5px;
+      color: var(--faint);
+      letter-spacing: .06em
+    }
+
+    .cue i {
+      display: block;
+      width: 1px;
+      height: 34px;
+      margin: 10px auto 0;
+      background: linear-gradient(to bottom, var(--faint), transparent)
+    }
+
+    .ready .cue {
+      opacity: 1
+    }
+
+    /* prose --------------------------------------------------------------- */
+    .prose p {
+      margin: 0 0 1.7em;
+      max-width: 60ch;
+      color: rgba(242, 235, 225, .82);
+      font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
+      font-weight: 400;
+      font-size: 19px;
+      line-height: 1.62;
+      letter-spacing: .001em
+    }
+
+    .prose p:last-child {
+      margin-bottom: 0
+    }
+
+    .prose b {
+      font-weight: 500;
+      color: var(--bone)
+    }
+
+    .pull {
+      text-align: center;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(1.65rem, 3.9vw, 3rem);
+      line-height: 1.22;
+      letter-spacing: -.005em;
+      max-width: 20ch;
+      margin: 0 auto;
+      color: var(--bone)
+    }
+
+    .pull em {
+      font-style: italic;
+      color: var(--prior)
+    }
+
+    .pull s {
+      text-decoration: none;
+      color: var(--post)
+    }
+
+    /* split --------------------------------------------------------------- */
+    .splitwrap {
+      position: relative
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      gap: clamp(26px, 5vw, 70px)
+    }
+
+    .rule {
+      background: linear-gradient(to bottom, transparent, var(--hair) 12%, var(--hair) 88%, transparent)
+    }
+
+    .op {
+      position: absolute;
+      left: 50%;
+      top: -14px;
+      transform: translate(-50%, -100%);
+      background: var(--ink);
+      padding: 0 14px;
+      font-size: 11.5px;
+      color: var(--faint);
+      white-space: nowrap
+    }
+
+    .col h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(2rem, 4.4vw, 3.1rem);
+      line-height: 1;
+      letter-spacing: -.01em
+    }
+
+    .col--prior h3 {
+      color: var(--prior)
+    }
+
+    .col--post h3 {
+      color: var(--post)
+    }
+
+    .col .kind {
+      margin: 14px 0 0;
+      font-size: 13px;
+      color: var(--bone)
+    }
+
+    .col .desc {
+      margin: 12px 0 0;
+      font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--mute);
+      max-width: 32ch
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 26px
+    }
+
+    .tags span {
+      font-size: 11.5px;
+      line-height: 1;
+      padding: 7px 11px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--hair);
+      color: var(--mute)
+    }
+
+    .col--prior .tags span {
+      border-color: rgba(122, 118, 240, .4);
+      color: rgba(214, 212, 255, .8)
+    }
+
+    .col--post .tags span {
+      border-color: rgba(217, 116, 60, .42);
+      color: rgba(246, 205, 177, .82)
+    }
+
+    @media(max-width:760px) {
+      .split {
+        grid-template-columns: 1fr;
+        gap: 56px
+      }
+
+      .rule {
+        height: 1px;
+        background: linear-gradient(to right, transparent, var(--hair), transparent)
+      }
+
+      .op {
+        position: static;
+        transform: none;
+        display: block;
+        padding: 0;
+        margin-bottom: 26px;
+        text-align: left
+      }
+    }
+
+    /* the generated point, drawn on the background curves ------------------ */
+    #law {
+      min-height: 210vh;
+      padding-top: clamp(18px, 3vh, 40px)
+    }
+
+    #law .stick {
+      position: sticky;
+      top: clamp(70px, 11vh, 130px);
+      height: 74vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between
+    }
+
+    #law .read {
+      font-family: "EB Garamond", "Garamond", "Times New Roman", serif;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: var(--faint);
+      font-variant-numeric: tabular-nums;
+      max-width: 46em
+    }
+
+    #law .read .eq {
+      color: var(--mute)
+    }
+
+    /* closing ------------------------------------------------------------- */
+    .close {
+      text-align: center
+    }
+
+    .close h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(1.9rem, 5vw, 3.4rem);
+      line-height: 1.15;
+      letter-spacing: -.01em
+    }
+
+    .close .cta {
+      display: inline-block;
+      position: relative;
+      padding: 4px 2px;
+      transition: color .4s, text-shadow .4s
+    }
+
+    .close .cta::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: -2px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--prior), var(--post), transparent);
+      transform: scaleX(.32);
+      transform-origin: center;
+      transition: transform .5s cubic-bezier(.2, .7, .2, 1)
+    }
+
+    .close .cta:hover {
+      color: var(--bone);
+      text-shadow: 0 0 26px rgba(122, 118, 240, .22)
+    }
+
+    .close .cta:hover::after {
+      transform: scaleX(1)
+    }
+
+    .close p {
+      margin: 26px auto 0;
+      max-width: 40ch;
+      color: var(--mute);
+      font-size: 14px
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding: 34px clamp(20px, 4vw, 44px) 42px;
+      border-top: 1px solid var(--hair);
+      font-size: 12px;
+      color: var(--faint)
+    }
+
+    footer i {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 14px;
+      color: var(--mute)
+    }
+
+    footer .mail {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .02em;
+      color: var(--faint);
+      border-bottom: 1px solid var(--hair);
+      padding-bottom: 2px;
+      transition: color .35s, border-color .35s
+    }
+
+    footer .mail:hover {
+      color: var(--bone);
+      border-color: var(--prior)
+    }
+
+    /* reveal -------------------------------------------------------------- */
+    .rv {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 1.1s cubic-bezier(.2, .7, .2, 1), transform 1.1s cubic-bezier(.2, .7, .2, 1)
+    }
+
+    .rv.in {
+      opacity: 1;
+      transform: none
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      .rv {
+        opacity: 1;
+        transform: none;
+        transition: none
+      }
+
+      .cursor.blink {
+        animation: none
+      }
+
+      .cue {
+        transition: none
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="vig" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <nav>
+    <a class="mark" href="#hero" aria-label="Out of Distribution">
+      <svg width="30" height="15" viewBox="0 0 30 15" aria-hidden="true">
+        <path d="M.8 13.6C7 13.6 8.4 2.4 15 2.4s8 11.2 14.2 11.2" />
+        <circle cx="5.6" cy="4.4" r="1.6" />
+      </svg>
+      <span class="wm"><i>out of distribution</i></span>
+    </a>
+    <div class="links">
+      <a href="#thesis">thesis</a>
+      <a href="#structure">structure</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- hero: the words are placed by script against the live curve geometry -->
+    <section class="hero" id="hero">
+      <h1 class="sr" style="position:absolute;left:-9999px">Out of Distribution</h1>
+      <div class="fig" id="fig" aria-hidden="true">
+        <div class="word" id="outof"><span id="outofT"></span><i class="cursor hold" id="c1"></i></div>
+        <div class="word" id="dist"><span id="distT"></span><i class="cursor hold" id="c2"></i></div>
+      </div>
+    </section>
+
+    <section id="thesis">
+      <div class="wrap narrow prose rv">
+        <p>The individuals shaping modern artificial intelligence, and its downstream effects, form an extremely small set that is often disjoint from
+          Harvard and MIT undergraduates. The reason for this effect is a function of proximity, more so than ability.</p>
+
+        <p>Thus, this discussion series provides sustained exposure to an elite set of talented individuals at the
+          frontier of intelligence research in their respective fields, compressing the time it takes to orient toward
+          the most impactful vectors of
+          knowledge.</p>
+
+        <p>Learning novel ideas from such individuals and contending with them ought to be distinguished,
+          and are treated separately in this discussion series through two lenses of discussion: prior and posterior.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <p class="pull rv">Exposure provides a <em>prior</em>, then updated by argument.</p>
+    </section>
+
+    <section id="structure">
+      <div class="wrap splitwrap rv">
+        <div class="op">p(&theta;) &rarr; p(&theta;&thinsp;|&thinsp;frontier insight)</div>
+        <div class="split">
+          <div class="col col--prior" data-curve="prior">
+            <h3>Prior</h3>
+            <p class="desc">A speaker sets out their vision of frontier research in the field, with intense recency.</p>
+          </div>
+          <div class="rule" aria-hidden="true"></div>
+          <div class="col col--post" data-curve="post">
+            <h3>Posterior</h3>
+            <p class="desc">A smaller-group discussion, with targeted feedback.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- the graphic for this section is the background field itself: the points
+         and the line between them are drawn on the prior and the posterior. -->
+    <section id="law">
+      <div class="wrap stick">
+        <div class="prose narrow rv">
+          <p>Combining ideas bridges prior and posterior knowledge in a manner that exceeds the sums of components.</p>
+        </div>
+        <div class="read">
+          <div class="eq" id="genEq"></div>
+          <div class="st" id="genSt"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap narrow prose rv">
+        <p>Speakers are chosen for their involvement in relevant research areas or dissemination of valuable
+          intellectual insights, from
+          inference-serving to policymaking. Conversations are designed to be maximally accessible.</p>
+      </div>
+    </section>
+
+    <!-- TODO(2): this block stands in for signup. add speaker, date, venue, and capture. -->
+    <!-- TODO: replace the mailing address below with the real list address. -->
+    <section class="close">
+      <div class="wrap rv">
+        <a class="cta" href="mailto:join@outofdistribution.dev?subject=venture%20out%20of%20your%20distribution">
+          <h2>venture out of <i>your</i> distribution.</h2>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div><i>out of distribution</i></div>
+    <a class="mail" href="mailto:join@outofdistribution.dev?subject=venture%20out%20of%20your%20distribution">join@outofdistribution.dev</a>
+  </footer>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const cv = document.getElementById('field');
+      const ctx = cv.getContext('2d');
+      const fig = document.getElementById('fig');
+      const elOut = document.getElementById('outof');
+      const elDist = document.getElementById('dist');
+      const tOut = document.getElementById('outofT');
+      const tDist = document.getElementById('distT');
+      // hidden clone of #dist used only to measure the FULL wordmark width, so
+      // sizing the bell never has to write into the live typed element
+      const measurer = document.createElement('span');
+      measurer.style.cssText = 'position:absolute;left:-99999px;top:-99999px;visibility:hidden;white-space:nowrap;font-family:var(--serif);font-style:italic;line-height:1;letter-spacing:-.01em';
+      document.body.appendChild(measurer);
+      const c1 = document.getElementById('c1'), c2 = document.getElementById('c2');
+      const cue = document.querySelector('.cue');
+      const secSplit = document.getElementById('structure');
+      const secLaw = document.getElementById('law');
+      const secClose = document.querySelector('.close');
+
+      const BONE = [242, 235, 225], VIOLET = [122, 118, 240], RUST = [217, 116, 60];
+      const N = 280;                       // samples across the (slightly overscanned) width
+      const OVER = 0.06;                   // fraction of width spilling off each edge
+
+      let W = 0, H = 0, BY = 0, PH = 0, baseSig = 240, baseSigTarget = 240;
+
+      // --- small numeric helpers -------------------------------------------------
+      const cl01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      function erf(x) {
+        const s = x < 0 ? -1 : 1; x = Math.abs(x);
+        const t = 1 / (1 + 0.3275911 * x);
+        const y = 1 - (((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t) * Math.exp(-x * x);
+        return s * y;
+      }
+      function rgba(c, a) { return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + a.toFixed(3) + ')'; }
+      function mix(a, b, t) { return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]; }
+      function gaussDraw() {
+        let u = 0, v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+      }
+
+      // pencil wobble: fixed smooth value noise, so the line looks drawn, never animated
+      function valueNoise(n, knots) {
+        const g = [], out = new Float32Array(n);
+        for (let i = 0; i <= knots; i++) g.push(Math.random() * 2 - 1);
+        for (let i = 0; i < n; i++) {
+          const t = i / (n - 1) * knots, i0 = Math.floor(t), f = t - i0;
+          const s = f * f * (3 - 2 * f);
+          out[i] = g[i0] * (1 - s) + g[Math.min(i0 + 1, knots)] * s;
+        }
+        return out;
+      }
+      const nx = valueNoise(N, 16), ny = valueNoise(N, 22);
+
+      // --- the curve ------------------------------------------------------------
+      function mkCurve() { return { h: new Float32Array(N), peak: 0, cx: 0, sig: 1 }; }
+      const cPrior = mkCurve(), cPost = mkCurve(), cDots = mkCurve();
+
+      const px_of = i => -OVER * W + i / (N - 1) * W * (1 + 2 * OVER);
+
+      function fill(c, cx, sig, skew) {
+        let max = 0, peak = 0;
+        for (let i = 0; i < N; i++) {
+          const z = (px_of(i) - cx) / sig;
+          const v = Math.exp(-0.5 * z * z) * (1 + erf(skew * z / Math.SQRT2));
+          c.h[i] = v;
+          if (v > max) { max = v; peak = i; }
+        }
+        const inv = 1 / (max || 1);
+        for (let i = 0; i < N; i++) c.h[i] *= inv;
+        c.peak = peak; c.cx = cx; c.sig = sig;
+        return c;
+      }
+      function hAtPx(c, X) {
+        const t = (X + OVER * W) / (W * (1 + 2 * OVER)) * (N - 1);
+        if (t <= 0 || t >= N - 1) return 0;
+        const i = t | 0, f = t - i;
+        return c.h[i] * (1 - f) + c.h[i + 1] * f;
+      }
+      function widthAt(c, level) {
+        let l = -1, r = -1;
+        for (let i = 0; i < N; i++) { if (c.h[i] >= level) { if (l < 0) l = i; r = i; } }
+        return l < 0 ? 0 : px_of(r) - px_of(l);
+      }
+      const yOf = (c, X) => BY - hAtPx(c, X) * PH;
+
+      // --- the point a pair of beliefs generates --------------------------------
+      // One point is taken on the prior and one on the posterior. The line through
+      // them meets the pair again, and where it lands is a third point that neither
+      // belief held on its own.
+      function crossings(c, m, xp, yp, out) {
+        const line = X => m * (X - xp) + yp;
+        let pv = yOf(c, px_of(0)) - line(px_of(0));
+        for (let i = 1; i < N; i++) {
+          const Xi = px_of(i), d = yOf(c, Xi) - line(Xi);
+          if ((d <= 0) !== (pv <= 0)) {
+            let a = px_of(i - 1), b = Xi;
+            for (let j = 0; j < 26; j++) {
+              const mid = (a + b) / 2;
+              if ((yOf(c, mid) - line(mid) <= 0) === (pv <= 0)) a = mid; else b = mid;
+            }
+            out.push((a + b) / 2);
+          }
+          pv = d;
+        }
+        return out;
+      }
+      // a chord also cuts the flat tails, where a curve is numerically alive and
+      // visually not, so height decides the winner rather than distance alone
+      function third(cA, cB, xp, yp, xq, m) {
+        const roots = crossings(cA, m, xp, yp, []);
+        const nA = roots.length;
+        crossings(cB, m, xp, yp, roots);
+        let best = null;
+        for (let i = 0; i < roots.length; i++) {
+          const X = roots[i], k = i < nA ? 0 : 1, c = k ? cB : cA;
+          const sep = Math.min(Math.abs(X - xp), Math.abs(X - xq));
+          if (sep < 60 || X < W * 0.05 || X > W * 0.95) continue;
+          const h = hAtPx(c, X);
+          if (h < 0.14) continue;
+          const q = h + 0.30 * Math.min(sep, 260) / 260;
+          if (!best || q > best.q) best = { X: X, h: h, k: k, sep: sep, q: q };
+        }
+        return best;
+      }
+
+      // samples that ride the distribution rather than decorating it
+      const dots = [];
+      for (let i = 0; i < 200; i++) dots.push({ z: gaussDraw(), r: Math.random(), s: .6 + Math.random() * 1.1, ph: Math.random() * 6.2832, fr: .0005 + Math.random() * .0011, ax: 1.6 + Math.random() * 2.6 });
+      const strays = [{ z: 2.55, up: 1.5 }, { z: -2.9, up: 1.22 }];
+
+      // --- state ---------------------------------------------------------------
+      let now = 0;                                  // current frame time, drives the dot drift
+      const S = {
+        mu: 0, sg: 1, sk: 0, tmu: 0, tsg: 1, tsk: 0,
+        scale: 1, split: 0, vis: 1, fPrior: 0, fPost: 0, tfPrior: 0, tfPost: 0,
+        gen: 0, walk: 0, twalk: 0, xq: -1, hand: -1e9,
+        mx: -1e5, my: -1e5, warm: 0, touched: false
+      };
+
+      function measure() {
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        W = innerWidth; H = innerHeight;
+        cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        BY = H * 0.66;
+        PH = Math.max(180, Math.min(H * 0.37, 440));
+
+        // pick sigma from the FINAL wordmark width so the bell is correctly
+        // sized and stable before the first letter is typed (no wobble, no snap)
+        baseSig = computeBaseSig();
+        baseSigTarget = baseSig;
+      }
+
+      // sigma is derived from the full wordmark width ("distribution"), measured
+      // in a hidden clone so the curve never touches the live typed element
+      function computeBaseSig() {
+        const fs = parseFloat(getComputedStyle(elDist).fontSize) || 64;
+        measurer.style.fontSize = fs + 'px';
+        measurer.textContent = 'distribution';
+        const w0 = measurer.offsetWidth || fs * 5.8;
+        measurer.textContent = '';
+        const lvl = Math.min(0.88, (0.34 * PH + 0.40 * fs) / PH);
+        const z = Math.sqrt(Math.max(0.08, -2 * Math.log(lvl)));
+        return Math.max(W * 0.115, Math.min((w0 * 1.20 / 2) / z, W * 0.30));
+      }
+
+      function fitScale(c, fs, w0) {
+        let s = 1;
+        for (let k = 0; k < 8; k++) {
+          const top = BY - 0.34 * PH - 0.40 * fs * s;
+          const lvl = Math.min(0.94, (BY - top) / PH);
+          const avail = widthAt(c, lvl);
+          const need = w0 * s * 1.08;
+          if (need <= avail || avail <= 0) break;
+          s *= Math.max(0.7, avail / need);
+          if (s < 0.46) { s = 0.46; break; }
+        }
+        return s;
+      }
+
+      function stroke(c, col, alpha) {
+        const draw = (ox, oy, a, lw) => {
+          ctx.beginPath();
+          for (let i = 0; i < N; i++) {
+            const h = c.h[i], amp = 0.32 + 0.68 * h;
+            ctx.lineTo(px_of(i) + nx[i] * 1.5 * amp + ox, BY - h * PH + ny[i] * 1.9 * amp + oy);
+          }
+          ctx.strokeStyle = rgba(col, a); ctx.lineWidth = lw; ctx.stroke();
+        };
+        draw(0, 0, alpha * .85, 1.15);
+        draw(.8, 1.0, alpha * .30, .75);
+      }
+
+      function mark(X, Y, r, col, a) {
+        ctx.beginPath(); ctx.arc(X, Y, r, 0, 6.2832);
+        ctx.fillStyle = rgba(col, a); ctx.fill();
+      }
+      function ring(X, Y, r, col, a) {
+        ctx.beginPath(); ctx.arc(X, Y, r, 0, 6.2832);
+        ctx.strokeStyle = rgba(col, a); ctx.lineWidth = 1; ctx.stroke();
+      }
+      // a fancy z-value label that sits on top of the dot cloud: a thin leader
+      // from the mark out to a small tab carrying the number
+      function zLabel(X, Y, side, text, col, a) {
+        if (a < 0.02) return;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.font = '500 13px "IBM Plex Mono", ui-monospace, monospace';
+        const w = ctx.measureText(text).width, pad = 6, plateH = 22;
+        const minLy = 78 + plateH / 2;
+        const wantLy = Y - 42;
+        const ly = wantLy < minLy ? minLy : wantLy;
+        // as the mark rises into the plate, ease the tab farther sideways
+        const cramped = Math.max(0, minLy - wantLy);
+        let lx = X + side * (22 + cramped * 0.55);
+        let tx = lx + side * 9;
+        let px = side < 0 ? tx - w - pad : tx - pad;
+        if (px < 10) { side = 1; lx = X + (22 + cramped * 0.55); tx = lx + 9; px = tx - pad; }
+        else if (px + w + pad * 2 > W - 10) { side = -1; lx = X - (22 + cramped * 0.55); tx = lx - 9; px = tx - w - pad; }
+        ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(lx, ly);
+        ctx.strokeStyle = rgba(col, .55); ctx.lineWidth = 1; ctx.stroke();
+        ctx.beginPath(); ctx.arc(lx, ly, 2.2, 0, 6.2832);
+        ctx.fillStyle = rgba(col, .95); ctx.fill();
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = side < 0 ? 'right' : 'left';
+        ctx.fillStyle = 'rgba(16,14,12,.78)';
+        ctx.fillRect(px, ly - 11, w + pad * 2, plateH);
+        ctx.fillStyle = rgba(col, 1);
+        ctx.fillText(text, tx, ly + .5);
+        ctx.restore();
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, W, H);
+        ctx.globalAlpha = S.vis;
+        ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+
+        const sp = ease(S.split);
+        const cx = W / 2 + S.mu * W * 0.055;
+        const sig = baseSig * S.sg;
+
+        fill(cPrior, cx - 0.165 * W * sp, sig * (1 + 0.10 * sp), S.sk * (1 - sp));
+        const pri = mix(BONE, VIOLET, sp * 0.92);
+        const post = mix(BONE, RUST, 0.95);
+        let cPo = null;
+        if (sp > 0.001) {
+          cPo = fill(cPost, cx + 0.135 * W * sp, sig * (1 - 0.30 * sp), S.sk * (1 - sp));
+        }
+
+        // resting axis
+        ctx.beginPath(); ctx.moveTo(W * 0.06, BY + 0.5); ctx.lineTo(W * 0.94, BY + 0.5);
+        ctx.strokeStyle = rgba(BONE, .055); ctx.lineWidth = 1; ctx.stroke();
+
+        // the update, drawn as a dashed hop between the two peaks
+        if (sp > 0.42 && cPo) {
+          const a = cl01((sp - 0.42) / 0.38) * 0.42 * (1 - 0.85 * S.gen);
+          const x1 = px_of(cPrior.peak), y1 = BY - PH - 16;
+          const x2 = px_of(cPo.peak), y2 = BY - cPo.h[cPo.peak] * PH - 16;
+          ctx.save(); ctx.setLineDash([2, 7]);
+          ctx.beginPath(); ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo((x1 + x2) / 2, Math.min(y1, y2) - PH * 0.22, x2, y2);
+          ctx.strokeStyle = rgba(BONE, a); ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+        }
+
+        stroke(cPrior, pri, 0.50 + 0.28 * S.fPrior + 0.10 * sp);
+        if (cPo) stroke(cPo, post, sp * (0.52 + 0.30 * S.fPost));
+
+        // samples: they sit under the prior, then migrate once belief updates
+        const dcx = lerp(cPrior.cx, cPo ? cPo.cx : cPrior.cx, sp * 0.9);
+        const dsg = lerp(cPrior.sig, cPo ? cPo.sig : cPrior.sig, sp * 0.9);
+        fill(cDots, dcx, dsg, S.sk * (1 - sp));
+        const dotCol = mix(BONE, RUST, sp * 0.75);
+        for (const d of dots) {
+          let X = dcx + d.z * dsg;
+          const h = hAtPx(cDots, X);
+          if (h < 0.025) continue;
+          let Y = BY - d.r * h * PH;
+          if (!REDUCED) {
+            const a = now * d.fr + d.ph;
+            X += Math.sin(a) * d.ax;
+            Y += Math.cos(a * .83 + d.ph) * d.ax * .7;
+            const dx = X - S.mx, dy = Y - S.my, dd = Math.hypot(dx, dy);
+            if (dd < 180 && dd > 0.01) { const k = (180 - dd) / 180 * 48; X += dx / dd * k; Y += dy / dd * k; }
+          }
+          ctx.beginPath(); ctx.arc(X, Y, d.s, 0, 6.2832);
+          ctx.fillStyle = rgba(dotCol, .28 + .50 * (1 - d.r)); ctx.fill();
+        }
+        for (const s of strays) {
+          const X = cPrior.cx + s.z * cPrior.sig, Y = BY - hAtPx(cPrior, X) * PH - s.up * 36;
+          ctx.beginPath(); ctx.arc(X, Y, 1.1, 0, 6.2832);
+          ctx.fillStyle = rgba(BONE, .16 * (1 - sp * 0.7)); ctx.fill();
+        }
+
+        // --- one point on each belief, and the point they generate -------------
+        genAt = null;
+        const showMarks = cPo && S.gen > 0.008;
+        if (showMarks) {
+          const g = S.gen;
+          // scroll walks P left→right on the prior; Q walks the other way on the posterior
+          let zp = -1.7 + 3.4 * S.walk;
+          if (now - S.hand < 220 && S.mx > -1e4 && cPrior.sig > 1) {
+            const zc = Math.max(-2.2, Math.min(2.2, (S.mx - cPrior.cx) / cPrior.sig));
+            zp = lerp(zp, zc, 0.45);
+          }
+          const xp = cPrior.cx + zp * cPrior.sig, yp = yOf(cPrior, xp);
+          const zq = 1.6 - 3.2 * S.walk;
+          const xqWant = cPo.cx + zq * cPo.sig;
+          S.xq = S.xq < 0 ? xqWant : lerp(S.xq, xqWant, REDUCED ? 1 : 0.22);
+
+          if (S.xq >= 0) {
+            const xq = S.xq, yq = yOf(cPo, xq);
+            const m = (yq - yp) / (xq - xp || 1e-6);
+            const line = X => m * (X - xp) + yp;
+            const t3 = third(cPrior, cPo, xp, yp, xq, m);
+
+            // held to the band the curves occupy, so a steep chord never runs up
+            // into the sentence above it
+            ctx.save();
+            ctx.beginPath(); ctx.rect(0, BY - PH - 12, W, PH + 14); ctx.clip();
+
+            if (t3) {
+              const x3 = t3.X, y3 = line(x3);
+              const l = Math.min(x3, xp, xq) - 54, r = Math.max(x3, xp, xq) + 54;
+              ctx.save(); ctx.setLineDash([2, 6]);
+              ctx.beginPath(); ctx.moveTo(l, line(l)); ctx.lineTo(r, line(r));
+              ctx.strokeStyle = rgba(BONE, .30 * g); ctx.lineWidth = 1; ctx.stroke();
+              ctx.beginPath(); ctx.moveTo(x3, y3); ctx.lineTo(x3, BY);
+              ctx.strokeStyle = rgba(BONE, .15 * g); ctx.stroke();
+              ctx.restore();
+              mark(x3, y3, 3, BONE, .95 * g); ring(x3, y3, 8, BONE, .34 * g);
+              const cn = t3.k ? cPo : cPrior;
+              genAt = {
+                k: t3.k, z: (x3 - cn.cx) / cn.sig,
+                zp: (xp - cPrior.cx) / cPrior.sig, zq: (xq - cPo.cx) / cPo.sig
+              };
+            }
+            mark(xp, yp, 2.7, pri, .95 * g); ring(xp, yp, 7, pri, .32 * g);
+            mark(xq, yq, 2.7, post, .95 * g); ring(xq, yq, 7, post, .32 * g);
+            ctx.restore();
+            const nz = v => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2);
+            zLabel(xp, yp, xp < cPrior.cx ? -1 : 1, 'prior  z = ' + nz(zp), pri, g);
+            zLabel(xq, yq, xq < cPo.cx ? -1 : 1, 'posterior  z = ' + nz((xq - cPo.cx) / cPo.sig), post, g);
+          }
+        }
+
+        // --- the pun: place the words against the geometry we just drew --------
+        const fs = parseFloat(getComputedStyle(elDist).fontSize) || 64;
+        const w0 = tDist.offsetWidth || 1;
+        S.scale = lerp(S.scale, fitScale(cPrior, fs, w0), REDUCED ? 1 : 0.16);
+        elDist.style.transform =
+          'translate3d(' + px_of(cPrior.peak).toFixed(1) + 'px,' + (BY - 0.34 * PH).toFixed(1) +
+          'px,0) translate(-50%,-50%) scale(' + S.scale.toFixed(3) + ')';
+
+        // "out of" sits centered above the apex, so it reads as outside the mass
+        const apx = px_of(cPrior.peak), apy = BY - cPrior.h[cPrior.peak] * PH;
+        const ax = apx, ay = Math.max(104, apy - Math.max(52, PH * 0.19));
+        elOut.style.transform = 'translate3d(' + ax.toFixed(1) + 'px,' + ay.toFixed(1) + 'px,0) translate(-50%,-50%)';
+
+        const outAlpha = (1 - sp) * S.warm;
+        if (outAlpha > 0.01) {
+          const y0 = ay + elOut.offsetHeight * 0.42 + 8, y1 = apy - 10;
+          if (y1 > y0 + 8) {
+            ctx.save(); ctx.setLineDash([1.5, 5.5]);
+            ctx.beginPath(); ctx.moveTo(ax, y0); ctx.lineTo(ax, y1);
+            ctx.strokeStyle = rgba(BONE, .22 * outAlpha); ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+          }
+          ctx.beginPath(); ctx.arc(ax, y0 - 4, 1.9, 0, 6.2832);
+          ctx.fillStyle = rgba(BONE, .55 * outAlpha); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // --- scroll coupling -----------------------------------------------------
+      function readScroll() {
+        const r = secSplit.getBoundingClientRect();
+        S.split = cl01((H * 0.82 - r.top) / (H * 0.62));
+        const y = scrollY || pageYOffset;
+
+        // the field is loud in the hero and quiet under prose, and it comes back up
+        // for the two sections whose argument it is carrying
+        const past = cl01((y - H * 0.30) / (H * 0.5));
+        const onSplit = cl01((H * 0.95 - r.top) / (H * 0.5)) * cl01((r.bottom + H * 0.05) / (H * 0.5));
+        const rl = secLaw.getBoundingClientRect();
+        const onLaw = cl01((H * 0.45 - rl.top) / (H * 0.45)) * cl01((rl.bottom - H * 0.10) / (H * 0.45));
+        const rc = secClose.getBoundingClientRect();
+        const closing = cl01((H * 0.95 - rc.top) / (H * 0.7));
+        S.vis = (1 - 0.62 * past * (1 - 0.85 * Math.max(onSplit, onLaw))) * (1 - 0.5 * closing);
+
+        // the construction fades in with the section and walks with the sticky runway
+        S.gen = onLaw;
+        S.twalk = cl01((-rl.top) / Math.max(1, rl.height - H));
+
+        const f = cl01(1 - y / (H * 0.55));
+        fig.style.opacity = f.toFixed(3);
+        fig.style.transform = 'translate3d(0,' + (-y * 0.14).toFixed(1) + 'px,0)';
+        if (cue) cue.style.opacity = (f * f).toFixed(3);
+      }
+
+      // --- the readout under the sentence --------------------------------------
+      const elEq = document.getElementById('genEq'), elSt = document.getElementById('genSt');
+      let genAt = null, shown = '';
+      function readout() {
+        if (!elEq) return;
+        // the z-numbers are now drawn on the canvas on top of the dots (see zLabel),
+        // so the text readout is retired — including the "line through them meets
+        // the prior once more" sentence
+        const key = genAt ? genAt.k + genAt.zp + genAt.zq + genAt.z : '';
+        if (key === shown) return;
+        shown = key;
+        elEq.textContent = '';
+        if (elSt) elSt.textContent = '';
+      }
+
+      // --- loop ----------------------------------------------------------------
+      let last = '';
+      function tick(t) {
+        requestAnimationFrame(tick);
+        const k = REDUCED ? 1 : 0.075;
+        S.mu = lerp(S.mu, S.tmu, k); S.sg = lerp(S.sg, S.tsg, k); S.sk = lerp(S.sk, S.tsk, k);
+        S.fPrior = lerp(S.fPrior, S.tfPrior, 0.09); S.fPost = lerp(S.fPost, S.tfPost, 0.09);
+        S.walk = lerp(S.walk, S.twalk, REDUCED ? 1 : 0.18);
+        if (!REDUCED && !S.touched) {                 // barely-there drift before a hand arrives
+          S.tsg = 1 + Math.sin(t / 9000) * 0.035;
+          S.tmu = Math.sin(t / 13000) * 0.10;
+        }
+        now = t;
+        readScroll();
+        const key = [S.mu, S.sg, S.sk, S.split, S.vis, S.fPrior, S.fPost, S.scale, S.warm, S.mx, S.my,
+        S.gen, S.walk, S.xq, Math.round(now / 66)].map(v => Math.round(v * 400)).join(',');
+        if (key !== last) {
+          last = key;
+          try { render(); readout(); } catch (err) { last = ''; }
+        }
+      }
+
+      // --- input ---------------------------------------------------------------
+      if (!REDUCED) {
+        addEventListener('pointermove', e => {
+          S.touched = true;
+          S.hand = performance.now();
+          S.mx = e.clientX; S.my = e.clientY;
+          const u = e.clientX / W, v = e.clientY / H;
+          S.tmu = (u - 0.5) * 1.7;
+          S.tsg = 0.74 + v * 0.62;
+          S.tsk = (0.5 - u) * 1.9;
+        }, { passive: true });
+        addEventListener('pointerleave', () => { S.mx = S.my = -1e5; });
+        document.querySelectorAll('[data-curve]').forEach(el => {
+          const on = el.dataset.curve === 'prior' ? 'tfPrior' : 'tfPost';
+          el.addEventListener('pointerenter', () => S[on] = 1);
+          el.addEventListener('pointerleave', () => S[on] = 0);
+        });
+      }
+
+      // --- reveals -------------------------------------------------------------
+      const io = new IntersectionObserver(es => {
+        es.forEach(e => {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        });
+      }, { threshold: .18, rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('.rv').forEach(el => io.observe(el));
+
+      document.querySelectorAll('.glyph path').forEach(p => {
+        const L = p.getTotalLength();
+        p.style.strokeDasharray = L; p.style.strokeDashoffset = REDUCED ? 0 : L;
+        p.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(.2,.7,.2,1) .15s';
+      });
+      new IntersectionObserver(es => es.forEach(e => {
+        if (e.isIntersecting) { e.target.querySelectorAll('.glyph path').forEach(p => p.style.strokeDashoffset = 0); }
+      }), { threshold: .4 }).observe(document.querySelector('.split'));
+
+      // --- typing --------------------------------------------------------------
+      function type(node, text, ms) {
+        return new Promise(res => {
+          let i = 0;
+          (function step() {
+            node.textContent = text.slice(0, ++i);
+            if (i >= text.length) return res();
+            setTimeout(step, ms * (0.62 + Math.random() * 0.8));
+          })();
+        });
+      }
+      async function intro() {
+        // the real faces have to be in before anything is typed: during the block
+        // period the glyphs are invisible while the carets are not, which reads as
+        // a fault rather than as an intro
+        if (document.fonts && document.fonts.ready)
+          await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2400))]);
+        measure(); last = '';
+        if (REDUCED) {
+          tOut.textContent = 'out of'; tDist.textContent = 'distribution';
+          c1.classList.add('gone'); c2.classList.add('gone');
+          measure(); document.body.classList.add('ready'); S.warm = 1; return;
+        }
+        await new Promise(r => setTimeout(r, 260));
+        c1.classList.remove('hold'); c1.classList.add('blink');
+        await type(tOut, 'out of', 78);
+        c1.classList.remove('blink'); c1.classList.add('gone');
+        c2.classList.remove('hold'); c2.classList.add('blink');
+        await new Promise(r => setTimeout(r, 300));
+        await type(tDist, 'distribution', 62);
+        await new Promise(r => setTimeout(r, 240));
+        c2.classList.add('gone');
+        document.body.classList.add('ready');
+        setTimeout(() => { if (cue) cue.style.transition = 'opacity .3s linear'; }, 1800);
+        measure(); last = '';                        // sigma is derived from the finished wordmark
+        const t0 = performance.now();
+        (function warm() {                            // fade in the leader line and its point
+          S.warm = cl01((performance.now() - t0) / 900);
+          if (S.warm < 1) requestAnimationFrame(warm);
+        })();
+      }
+
+      // --- boot ---------------------------------------------------------------
+      measure(); render();
+      addEventListener('resize', () => { measure(); last = ''; }, { passive: true });
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); last = ''; });
+      requestAnimationFrame(tick);
+      intro();
+
+    })();
+  </script>
+</body>
+
+</html>
