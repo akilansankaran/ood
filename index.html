@@ -485,7 +485,9 @@
     .close .cta::after {
       content: "";
       position: absolute;
-      left: 0; right: 0; bottom: -2px;
+      left: 0;
+      right: 0;
+      bottom: -2px;
       height: 1px;
       background: linear-gradient(to right, transparent, var(--prior), var(--post), transparent);
       transform: scaleX(.32);
@@ -614,9 +616,17 @@
       fill: currentColor
     }
 
-    .join .bell[data-hue="orange"] { color: var(--post) }
-    .join .bell[data-hue="violet"] { color: var(--prior) }
-    .join .bell[data-hue="bone"] { color: rgba(242, 235, 225, .55) }
+    .join .bell[data-hue="orange"] {
+      color: var(--post)
+    }
+
+    .join .bell[data-hue="violet"] {
+      color: var(--prior)
+    }
+
+    .join .bell[data-hue="bone"] {
+      color: rgba(242, 235, 225, .55)
+    }
 
     .join .bell.on {
       border-color: var(--post);
@@ -652,7 +662,9 @@
     }
 
     @keyframes orbit {
-      to { --orbit: 360deg }
+      to {
+        --orbit: 360deg
+      }
     }
 
     .join button {
@@ -800,8 +812,10 @@
 
     <section id="thesis">
       <div class="wrap narrow prose rv">
-        <p>The individuals shaping modern artificial intelligence, and its downstream effects, form an extremely small set that is often disjoint from
-          Harvard and MIT undergraduates. The reason for this effect is a function of proximity, more so than ability.</p>
+        <p>The individuals shaping modern artificial intelligence, and its downstream effects, form an extremely small
+          set that is often disjoint from
+          Harvard and MIT undergraduates. The reason for this effect is a function of proximity, more so than ability.
+        </p>
 
         <p>Thus, this discussion series provides sustained exposure to an elite set of talented individuals at the
           frontier of intelligence research in their respective fields, compressing the time it takes to orient toward
@@ -876,7 +890,7 @@
           <div class="probe" id="joinProbe" aria-label="select the orange distributions"></div>
           <div class="row">
             <span class="join-orbit">
-              <button type="submit" id="joinBtn">join us</button>
+              <button type="submit" id="joinBtn">counter your priors</button>
             </span>
           </div>
           <p class="msg" id="joinMsg" role="status"></p>
@@ -1518,13 +1532,13 @@
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.ok) {
-            await loadChallenge().catch(() => {});
+            await loadChallenge().catch(() => { });
             msg.className = 'msg err';
             msg.textContent = data.error || 'That did not go through.';
             return;
           }
           form.reset();
-          await loadChallenge().catch(() => {});
+          await loadChallenge().catch(() => { });
           msg.className = 'msg ok';
           msg.textContent = data.already
             ? 'You are already on the list.'
