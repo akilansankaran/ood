@@ -572,21 +572,28 @@
     }
 
     .join .probe {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin: 0 0 6px
+      position: relative;
+      height: 148px;
+      margin: 0 0 10px;
+      overflow: hidden;
+      border: 1px solid var(--hair);
+      border-radius: 10px
     }
 
     .join .bell {
       appearance: none;
-      background: rgba(16, 14, 12, .35);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 68px;
+      background: rgba(16, 14, 12, .45);
       border: 1px solid var(--hair);
       border-radius: 8px;
       padding: 10px 6px 8px;
       cursor: pointer;
       color: var(--mute);
-      transition: transform .55s cubic-bezier(.2, .7, .2, 1), border-color .3s, background .3s, color .3s
+      will-change: transform;
+      transition: border-color .3s, background .3s, box-shadow .3s
     }
 
     .join .bell svg {
@@ -1424,33 +1431,57 @@
       const probe = document.getElementById('joinProbe');
       if (!form || !msg || !btn || !probe) return;
       const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let token = '', started = Date.now(), picked = new Set(), items = [], shuffleTimer;
+      let token = '', started = Date.now(), picked = new Set(), pieces = [], moving = false;
 
       const BELL = '<svg viewBox="0 0 30 15" aria-hidden="true"><path d="M.8 13.6C7 13.6 8.4 2.4 15 2.4s8 11.2 14.2 11.2"/><circle cx="5.6" cy="4.4" r="1.6"/></svg>';
 
-      function paint() {
-        probe.innerHTML = '';
-        items.forEach((it) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'bell' + (picked.has(it.id) ? ' on' : '');
-          b.dataset.hue = it.hue;
-          b.dataset.id = it.id;
-          b.innerHTML = BELL;
-          b.addEventListener('click', () => {
-            if (picked.has(it.id)) picked.delete(it.id); else picked.add(it.id);
-            b.classList.toggle('on', picked.has(it.id));
-          });
-          probe.appendChild(b);
-        });
+      function place(p) {
+        p.el.style.transform = 'translate3d(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px,0)';
       }
 
-      function shuffle() {
-        for (let i = items.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [items[i], items[j]] = [items[j], items[i]];
+      function tickMove() {
+        if (!moving || REDUCED) return;
+        const W = probe.clientWidth, H = probe.clientHeight;
+        for (const p of pieces) {
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < 6) { p.x = 6; p.vx = Math.abs(p.vx); }
+          if (p.y < 6) { p.y = 6; p.vy = Math.abs(p.vy); }
+          if (p.x > W - p.w - 6) { p.x = W - p.w - 6; p.vx = -Math.abs(p.vx); }
+          if (p.y > H - p.h - 6) { p.y = H - p.h - 6; p.vy = -Math.abs(p.vy); }
+          place(p);
         }
-        paint();
+        requestAnimationFrame(tickMove);
+      }
+
+      function mount(items) {
+        probe.innerHTML = '';
+        pieces = [];
+        const W = probe.clientWidth || 320, H = probe.clientHeight || 148;
+        items.forEach((it, i) => {
+          const el = document.createElement('button');
+          el.type = 'button';
+          el.className = 'bell';
+          el.dataset.hue = it.hue;
+          el.dataset.id = it.id;
+          el.innerHTML = BELL;
+          el.addEventListener('click', () => {
+            if (picked.has(it.id)) picked.delete(it.id); else picked.add(it.id);
+            el.classList.toggle('on', picked.has(it.id));
+          });
+          probe.appendChild(el);
+          const w = el.offsetWidth || 68, h = el.offsetHeight || 42;
+          const col = i % 4, row = (i / 4) | 0;
+          const p = {
+            el, id: it.id, w, h,
+            x: 10 + col * ((W - 20 - w) / 3),
+            y: 12 + row * ((H - 24 - h)),
+            vx: (Math.random() * 0.55 + 0.22) * (Math.random() < 0.5 ? -1 : 1),
+            vy: (Math.random() * 0.45 + 0.18) * (Math.random() < 0.5 ? -1 : 1)
+          };
+          pieces.push(p);
+          place(p);
+        });
+        if (!REDUCED && !moving) { moving = true; requestAnimationFrame(tickMove); }
       }
 
       async function loadChallenge() {
@@ -1459,15 +1490,13 @@
         const res = await fetch('/api/challenge');
         const data = await res.json();
         token = data.token || '';
-        items = Array.isArray(data.items) ? data.items.slice() : [];
-        shuffle();
+        mount(Array.isArray(data.items) ? data.items : []);
       }
 
       loadChallenge().catch(() => {
         msg.className = 'msg err';
         msg.textContent = 'Could not load the check.';
       });
-      if (!REDUCED) shuffleTimer = setInterval(shuffle, 1700);
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
