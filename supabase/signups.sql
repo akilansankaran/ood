@@ -7,3 +7,10 @@ create table if not exists public.signups (
 );
 
 alter table public.signups enable row level security;
+
+drop policy if exists "public can insert signups" on public.signups;
+create policy "public can insert signups"
+  on public.signups
+  for insert
+  to anon, authenticated
+  with check (true);

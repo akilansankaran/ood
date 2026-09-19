@@ -42,7 +42,9 @@ module.exports = async (req, res) => {
   }
 
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    || process.env.SUPABASE_PUBLISHABLE_KEY
+    || process.env.SUPABASE_ANON_KEY;
   if (!url || !key) {
     res.status(500).json({ ok: false, error: 'Signup is not configured yet.' });
     return;
