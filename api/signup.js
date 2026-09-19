@@ -1,3 +1,4 @@
+const { sign } = require('./challenge');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function readBody(req) {
@@ -16,20 +17,23 @@ module.exports = async (req, res) => {
   const email = String(body.email || '').trim().toLowerCase();
   const website = String(body.website || '').trim();
   const started = Number(body.started || 0);
-  const a = Number(body.a);
-  const b = Number(body.b);
-  const challenge = String(body.challenge || '').trim();
+  const token = String(body.token || '').trim();
+  const picked = Array.isArray(body.picked) ? body.picked.map(String) : [];
 
   if (website) {
     res.status(200).json({ ok: true });
     return;
   }
-  if (!started || Date.now() - started < 1400) {
+  if (!started || Date.now() - started < 1600) {
     res.status(400).json({ ok: false, error: 'Please try again in a moment.' });
     return;
   }
-  if (!Number.isInteger(a) || !Number.isInteger(b) || Number(challenge) !== a + b) {
-    res.status(400).json({ ok: false, error: 'The check did not match. Try the sum again.' });
+  const crypto = require('crypto');
+  const expect = sign(picked);
+  const same = token.length === expect.length
+    && crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expect));
+  if (!token || picked.length !== 3 || !same) {
+    res.status(400).json({ ok: false, error: 'Select the three orange distributions.' });
     return;
   }
   if (name.length < 1 || name.length > 120) {
